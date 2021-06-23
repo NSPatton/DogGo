@@ -10,12 +10,12 @@ namespace DogGo.Repositories
 {
     //The repository has to have all of the methods of the Interface it is inheriting from
     //But we can add methods that arent a part of the interface as well
-    public class OwnerRepository : IOwnerRepository
+    public class DogRepository : IDogRepository
     {
         private readonly IConfiguration _config;
 
         // The constructor accepts an IConfiguration object as a parameter. This class comes from the ASP.NET framework and is useful for retrieving things out of the appsettings.json file like connection strings.
-        public OwnerRepository(IConfiguration config)
+        public DogRepository(IConfiguration config)
         {
             _config = config;
         }
@@ -28,7 +28,7 @@ namespace DogGo.Repositories
             }
         }
 
-        public List<Owner> GetAllOwners()
+        public List<Dog> GetAllDogs()
         {
             using (SqlConnection conn = Connection)
             {
@@ -36,42 +36,39 @@ namespace DogGo.Repositories
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = @"
-                        SELECT o.Id, o.[Name], o.Email, o.Address, o.NeighborhoodId, o.Phone, n.Name AS Neighborhood
-                        FROM Owner o
-                        JOIN Neighborhood n on o.NeighborhoodId = n.Id
+                        SELECT d.Id, d.[Name], d.OwnerId, d.Breed, d.Notes, d.ImageUrl, o.Name AS Owner
+                        FROM Dog d
+                        JOIN Owner o ON o.id = d.OwnerId
                     ";
 
                     SqlDataReader reader = cmd.ExecuteReader();
 
-                    List<Owner> owners = new List<Owner>();
+                    List<Dog> dogs = new List<Dog>();
                     while (reader.Read())
                     {
-                        Neighborhood neighborhood = new Neighborhood
-                        {
-                            Name = reader.GetString(reader.GetOrdinal("Neighborhood"))
-                        };
                         Owner owner = new Owner
+                        {
+                            Name = reader.GetString(reader.GetOrdinal("Owner"))
+                        };
+                        Dog dog = new Dog
                         {
                             Id = reader.GetInt32(reader.GetOrdinal("Id")),
                             Name = reader.GetString(reader.GetOrdinal("Name")),
-                            Email = reader.GetString(reader.GetOrdinal("Email")),
-                            Address = reader.GetString(reader.GetOrdinal("Address")),
-                            NeighborhoodId = reader.GetInt32(reader.GetOrdinal("NeighborhoodId")),
-                            Phone = reader.GetString(reader.GetOrdinal("Phone")),
-                            Neighborhood = neighborhood
+                            OwnerId = reader.GetInt32(reader.GetOrdinal("OwnerId")),
+                            Breed = reader.GetString(reader.GetOrdinal("Breed")),
                         };
 
-                        owners.Add(owner);
+                        dogs.Add(dog);
                     }
 
                     reader.Close();
 
-                    return owners;
+                    return dogs;
                 }
             }
         }
 
-        public Owner GetOwnerById(int id)
+        public Dog GetDogById(int id)
         {
             using (SqlConnection conn = Connection)
             {
@@ -79,8 +76,8 @@ namespace DogGo.Repositories
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = @"
-                        SELECT Id, [Name], Email, Address, NeighborhoodId, Phone
-                        FROM Owner
+                        SELECT Id, [Name], OwnerId, Breed, Notes, ImageUrl
+                        FROM Dog
                         WHERE Id = @id
                     ";
 
@@ -90,18 +87,18 @@ namespace DogGo.Repositories
 
                     if (reader.Read())
                     {
-                        Owner owner = new Owner
+                        Dog dog = new Dog
                         {
                             Id = reader.GetInt32(reader.GetOrdinal("Id")),
                             Name = reader.GetString(reader.GetOrdinal("Name")),
-                            Email = reader.GetString(reader.GetOrdinal("Email")),
-                            Address = reader.GetString(reader.GetOrdinal("Address")),
-                            NeighborhoodId = reader.GetInt32(reader.GetOrdinal("NeighborhoodId")),
-                            Phone = reader.GetString(reader.GetOrdinal("Phone"))
+                            OwnerId = reader.GetInt32(reader.GetOrdinal("OwnerId")),
+                            Breed = reader.GetString(reader.GetOrdinal("Breed")),
+                            Notes = reader.GetString(reader.GetOrdinal("Notes")),
+                            ImageUrl = reader.GetString(reader.GetOrdinal("ImageUrl"))
                         };
 
                         reader.Close();
-                        return owner;
+                        return dog;
                     }
                     else
                     {
@@ -111,7 +108,7 @@ namespace DogGo.Repositories
                 }
             }
         }
-        public Owner GetOwnerByEmail(string email)
+        public List<Dog> GetDogByOwnerId(int ownerId)
         {
             using (SqlConnection conn = Connection)
             {
@@ -120,37 +117,45 @@ namespace DogGo.Repositories
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = @"
-                        SELECT Id, [Name], Email, Address, Phone, NeighborhoodId
-                        FROM Owner
-                        WHERE Email = @email";
+                        SELECT Id, [Name], Breed, Notes, ImageUrl, OwnerId
+                        FROM Dog
+                        WHERE OwnerId = @ownerId";
 
-                    cmd.Parameters.AddWithValue("@email", email);
+                    cmd.Parameters.AddWithValue("@ownerId", ownerId);
 
                     SqlDataReader reader = cmd.ExecuteReader();
 
-                    if (reader.Read())
+                    List<Dog> dogs = new List<Dog>();
+
+                    while (reader.Read())
                     {
-                        Owner owner = new Owner()
+                        Dog dog = new Dog()
                         {
                             Id = reader.GetInt32(reader.GetOrdinal("Id")),
                             Name = reader.GetString(reader.GetOrdinal("Name")),
-                            Email = reader.GetString(reader.GetOrdinal("Email")),
-                            Address = reader.GetString(reader.GetOrdinal("Address")),
-                            Phone = reader.GetString(reader.GetOrdinal("Phone")),
-                            NeighborhoodId = reader.GetInt32(reader.GetOrdinal("NeighborhoodId"))
+                            Breed = reader.GetString(reader.GetOrdinal("Breed")),
+                            OwnerId = reader.GetInt32(reader.GetOrdinal("OwnerId"))
                         };
 
-                        reader.Close();
-                        return owner;
+                        if (reader.IsDBNull(reader.GetOrdinal("Notes")) == false)
+                        {
+                            dog.Notes = reader.GetString(reader.GetOrdinal("Notes"));
+                        }
+                        if (reader.IsDBNull(reader.GetOrdinal("ImageUrl")) == false)
+                        {
+                            dog.ImageUrl = reader.GetString(reader.GetOrdinal("ImageUrl"));
+                        }
+
+                        dogs.Add(dog);
                     }
 
                     reader.Close();
-                    return null;
+                    return dogs;
                 }
             }
         }
 
-        public void AddOwner(Owner owner)
+        public void AddDog(Dog dog)
         {
             using (SqlConnection conn = Connection)
             {
@@ -158,25 +163,25 @@ namespace DogGo.Repositories
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = @"
-                    INSERT INTO Owner ([Name], Email, Phone, Address, NeighborhoodId)
+                    INSERT INTO Dog ([Name], Breed, Notes, ImageUrl, OwnerId)
                     OUTPUT INSERTED.ID
-                    VALUES (@name, @email, @phoneNumber, @address, @neighborhoodId);
+                    VALUES (@name, @breed, @notes, @imageUrl, @ownerId);
                 ";
 
-                    cmd.Parameters.AddWithValue("@name", owner.Name);
-                    cmd.Parameters.AddWithValue("@email", owner.Email);
-                    cmd.Parameters.AddWithValue("@phoneNumber", owner.Phone);
-                    cmd.Parameters.AddWithValue("@address", owner.Address);
-                    cmd.Parameters.AddWithValue("@neighborhoodId", owner.NeighborhoodId);
+                    cmd.Parameters.AddWithValue("@name", dog.Name);
+                    cmd.Parameters.AddWithValue("@breed", dog.Breed);
+                    cmd.Parameters.AddWithValue("@notes", dog.Notes);
+                    cmd.Parameters.AddWithValue("@imageUrl", dog.ImageUrl);
+                    cmd.Parameters.AddWithValue("@ownerId", dog.OwnerId);
 
                     int id = (int)cmd.ExecuteScalar();
 
-                    owner.Id = id;
+                    dog.Id = id;
                 }
             }
         }
 
-        public void UpdateOwner(Owner owner)
+        public void UpdateDog(Dog dog)
         {
             using (SqlConnection conn = Connection)
             {
@@ -185,28 +190,28 @@ namespace DogGo.Repositories
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = @"
-                            UPDATE Owner
+                            UPDATE Dog
                             SET 
                                 [Name] = @name, 
-                                Email = @email, 
-                                Address = @address, 
-                                Phone = @phone, 
-                                NeighborhoodId = @neighborhoodId
+                                Breed = @breed, 
+                                Notes = @notes, 
+                                ImageUrl = @imageUrl, 
+                                OwnerId = @ownerId
                             WHERE Id = @id";
 
-                    cmd.Parameters.AddWithValue("@name", owner.Name);
-                    cmd.Parameters.AddWithValue("@email", owner.Email);
-                    cmd.Parameters.AddWithValue("@address", owner.Address);
-                    cmd.Parameters.AddWithValue("@phone", owner.Phone);
-                    cmd.Parameters.AddWithValue("@neighborhoodId", owner.NeighborhoodId);
-                    cmd.Parameters.AddWithValue("@id", owner.Id);
+                    cmd.Parameters.AddWithValue("@name", dog.Name);
+                    cmd.Parameters.AddWithValue("@breed", dog.Breed);
+                    cmd.Parameters.AddWithValue("@address", dog.Notes);
+                    cmd.Parameters.AddWithValue("@imageUrl", dog.ImageUrl);
+                    cmd.Parameters.AddWithValue("@neighborhoodId", dog.OwnerId);
+                    cmd.Parameters.AddWithValue("@id", dog.Id);
 
                     cmd.ExecuteNonQuery();
                 }
             }
         }
 
-        public void DeleteOwner(int ownerId)
+        public void DeleteDog(int dogId)
         {
             using (SqlConnection conn = Connection)
             {
@@ -215,11 +220,11 @@ namespace DogGo.Repositories
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
                     cmd.CommandText = @"
-                            DELETE FROM Owner
+                            DELETE FROM Dog
                             WHERE Id = @id
                         ";
 
-                    cmd.Parameters.AddWithValue("@id", ownerId);
+                    cmd.Parameters.AddWithValue("@id", dogId);
 
                     cmd.ExecuteNonQuery();
                 }
