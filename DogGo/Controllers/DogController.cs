@@ -84,7 +84,7 @@ namespace DogGo.Controllers
             {
                 _dogRepo.UpdateDog(dog);
 
-                return RedirectToAction(nameof(Index));
+                return RedirectToAction("Index");
             }
             catch
             {
