@@ -93,9 +93,14 @@ namespace DogGo.Repositories
                             Name = reader.GetString(reader.GetOrdinal("Name")),
                             OwnerId = reader.GetInt32(reader.GetOrdinal("OwnerId")),
                             Breed = reader.GetString(reader.GetOrdinal("Breed")),
-                            Notes = reader.GetString(reader.GetOrdinal("Notes")),
-                            ImageUrl = reader.GetString(reader.GetOrdinal("ImageUrl"))
+                            Notes = reader.IsDBNull(reader.GetOrdinal("Notes"))?null : 
+                            reader.GetString(reader.GetOrdinal("Notes")),
+                            ImageUrl = reader.IsDBNull(reader.GetOrdinal("ImageUrl"))?null :
+                            reader.GetString(reader.GetOrdinal("ImageUrl"))
+                        
                         };
+
+
 
                         reader.Close();
                         return dog;

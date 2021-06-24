@@ -29,8 +29,15 @@ namespace DogGo.Controllers
         // GET: DogsController/Details/5
         public ActionResult Details(int id)
         {
+            Dog dog = _dogRepo.GetDogById(id);
+            if (dog == null)
+            {
+                return NotFound();
 
-            return View();
+            }
+
+            return View(dog);
+
         }
 
         // GET: DogsController/Create
