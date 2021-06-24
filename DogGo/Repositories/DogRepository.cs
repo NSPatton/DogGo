@@ -93,14 +93,15 @@ namespace DogGo.Repositories
                             Name = reader.GetString(reader.GetOrdinal("Name")),
                             OwnerId = reader.GetInt32(reader.GetOrdinal("OwnerId")),
                             Breed = reader.GetString(reader.GetOrdinal("Breed")),
-                            Notes = reader.IsDBNull(reader.GetOrdinal("Notes"))?null : 
+                            //Because we have null information in the tables, we need a ternary
+                            //If notes are null, we get a c# null that is only understood by c#
+                            Notes = reader.IsDBNull(reader.GetOrdinal("Notes"))?null :
+                            //If they are not null, we get the notes
                             reader.GetString(reader.GetOrdinal("Notes")),
                             ImageUrl = reader.IsDBNull(reader.GetOrdinal("ImageUrl"))?null :
                             reader.GetString(reader.GetOrdinal("ImageUrl"))
                         
                         };
-
-
 
                         reader.Close();
                         return dog;
