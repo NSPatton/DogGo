@@ -120,6 +120,8 @@ namespace DogGo.Controllers
         {
             try
             {
+                dog.OwnerId = GetCurrentUserId();
+
                 _dogRepo.DeleteDog(id);
                 return RedirectToAction(nameof(Index));
             }
